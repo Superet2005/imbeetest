@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <style>body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.log {
+  background-color: #e6e6e6;
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  height: 230px;
+  overflow-y: scroll;
+  padding: 5px;
+  white-space: pre-wrap;
+}
+.log:only-child {
+  height: inherit;
+}
+
+div.image {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.image img {
+  width: 320px;
+}
+
+div.video {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.video video {
+  overflow: hidden;
+  width: 320px;
+  height: 240px;
+}
+
+.collapsed {
+  display: none;
+}
+
+.expander::after {
+  content: " (show details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.collapser::after {
+  content: " (hide details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+
+.sort-icon {
+  font-size: 0px;
+  float: left;
+  margin-right: 5px;
+  margin-top: 5px;
+  /*triangle*/
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+}
+.inactive .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #E6E6E6;
+}
+.asc.active .sort-icon {
+  /*finish triangle*/
+  border-bottom: 8px solid #999;
+}
+.desc.active .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #999;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>firefox_3.html</h1>
+    <p>Report generated on 09-Aug-2022 at 20:37:06 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "1.0.0", "py": "1.11.0", "pytest": "7.0.1"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-7-6.1.7601-SP1</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"html": "3.1.1", "metadata": "1.11.0"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.6.2</td></tr></table>
+    <h2>Summary</h2>
+    <p>1 tests ran in 41.27 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">0 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">1 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">Test_case.py::TestClass_case_questionPage::test_case_questionListing</td>
+          <td class="col-duration">40.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;Test_case.TestClass_case_questionPage object at 0x03FD76D0&gt;<br/>resource = None<br/><br/>    def test_case_questionListing(self, resource):<br/>        time.sleep(3)<br/>    <br/>        tagsList = [&#x27;javascript&#x27;, &#x27;python&#x27;, &#x27;java&#x27;, &#x27;c#&#x27;, &#x27;php&#x27;, &#x27;android&#x27;, &#x27;html&#x27;, &#x27;jquery&#x27;, &#x27;c++&#x27;, &#x27;css&#x27;]<br/>        self.questionListingPage.checkTagVisibility(tagsList)<br/>        self.questionListingPage.checkDefaultTagSelected(cssProperty=&quot;color&quot;, highlight=&quot;rgb(255, 255, 255)&quot;, unhighlight=&quot;rgb(49, 151, 149)&quot;)<br/>        self.questionListingPage.checkTagRoundCorner(cssProperty=&quot;--chakra-radii-md&quot;, expectedResult=&quot;0.375rem&quot;)<br/>    <br/>        self.questionListingPage.clickOnTag(tagsList)<br/>        self.questionListingPage.countTagsNumbers(len(tagsList))<br/>    <br/>        ####<br/>&gt;       self.questionListingPage.checkScollingLazyLoad(scollingTimes=3, tags=[&#x27;javascript&#x27;, &#x27;python&#x27;])<br/><br/>..\..\bee\Test_case.py:36: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>test_function\question_page_function.py:94: in checkScollingLazyLoad<br/>    f&quot;https://api.stackexchange.com/2.2/questions\?page={j}&amp;pageSize=20&amp;site=stackoverflow&amp;tagged={i}&quot;)<br/>utility.py:118: in waitForRequest<br/>    self.driver.wait_for_request(endpoint)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;seleniumwire.webdriver.Firefox (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;)&gt;<br/>pat = &#x27;https://api.stackexchange.com/2.2/questions\\?page=2&amp;pageSize=20&amp;site=stackoverflow&amp;tagged=python&#x27;<br/>timeout = 10<br/><br/>    def wait_for_request(self, pat: str, timeout: Union[int, float] = 10) -&gt; Request:<br/>        &quot;&quot;&quot;Wait up to the timeout period for a request matching the specified<br/>        pattern to be seen.<br/>    <br/>        The pat attribute can be can be a simple substring or a regex that will<br/>        be searched in the full request URL. If a request is not seen before the<br/>        timeout then a TimeoutException is raised. Only requests with corresponding<br/>        responses are considered.<br/>    <br/>        Given that pat can be a regex, ensure that any special characters<br/>        (e.g. question marks) are escaped.<br/>    <br/>        Args:<br/>            pat: The pat of the request to look for. A regex can be supplied.<br/>            timeout: The maximum time to wait in seconds. Default 10s.<br/>    <br/>        Returns:<br/>            The request.<br/>        Raises:<br/>            TimeoutException if a request is not seen within the timeout<br/>                period.<br/>        &quot;&quot;&quot;<br/>        start = time.time()<br/>    <br/>        while time.time() - start &lt; timeout:<br/>            request = self.backend.storage.find(pat)<br/>    <br/>            if request is None:<br/>                time.sleep(1 / 5)<br/>            else:<br/>                return request<br/>    <br/>&gt;       raise TimeoutException(&#x27;Timed out after {}s waiting for request matching {}&#x27;.format(timeout, pat))<br/><span class="error">E       selenium.common.exceptions.TimeoutException: Message: Timed out after 10s waiting for request matching https://api.stackexchange.com/2.2/questions\?page=2&amp;pageSize=20&amp;site=stackoverflow&amp;tagged=python</span><br/><br/>venv\lib\site-packages\seleniumwire\inspect.py:83: TimeoutException<br/> ------------------------------Captured stdout call------------------------------ <br/>[&lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;25f9b1a4-4cd3-4bac-954a-b968eac868aa&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;509d8def-6f90-4fb3-b7f1-a393bf6459f5&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;352cf182-145a-4bf9-8650-ee439cf87d6e&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;90e4ed8f-0fea-4802-8517-f212af54e5bd&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;d78ae2d9-62c3-4665-b7af-6800001ff77e&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;01cab6fd-4c08-44a7-9df6-1504c9473a9a&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;7470ddf2-787f-456d-91b5-062ce47cf08a&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;03e716fc-7183-4b28-a03b-d45db1e3c282&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;5598a48c-2cc0-41db-a64f-f0bbca79422e&quot;)&gt;, &lt;selenium.webdriver.firefox.webelement.FirefoxWebElement (session=&quot;d16c23d9-9bd3-4928-9dd7-ce4031d91d17&quot;, element=&quot;f59c7586-f6b6-46ad-bece-518b9fabeb0d&quot;)&gt;]
+10
+0.375rem
+click //span[text()=&#x27;javascript&#x27;]
+click //span[text()=&#x27;python&#x27;]
+click //span[text()=&#x27;java&#x27;]
+click //span[text()=&#x27;c#&#x27;]
+click //span[text()=&#x27;php&#x27;]
+click //span[text()=&#x27;android&#x27;]
+click //span[text()=&#x27;html&#x27;]
+click //span[text()=&#x27;jquery&#x27;]
+click //span[text()=&#x27;c++&#x27;]
+click //span[text()=&#x27;css&#x27;]
+10
+scolling javascript 2
+scolling javascript 3
+scolling javascript 4
+Exception Message: Timed out after 10s waiting for request matching https://api.stackexchange.com/2.2/questions\?page=2&amp;pageSize=20&amp;site=stackoverflow&amp;tagged=python
+
+<br/> ----------------------------Captured stdout teardown---------------------------- <br/>teardown - close webdriver
+<br/></div></td></tr></tbody></table></body></html>

@@ -1,0 +1,17 @@
+1660048585946	geckodriver	INFO	Listening on 127.0.0.1:54708
+1660048588989	mozrunner::runner	INFO	Running command: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" "--marionette" "-no-remote" "-profile" "C:\\Users\\et\\AppData\\Local\\Temp\\rust_mozprofilemto0Xn"
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+1660048589775	Marionette	INFO	Marionette enabled
+1660048589780	Marionette	INFO	Listening on port 54720
+Read port: 54720
+1660048589982	RemoteAgent	WARN	TLS certificate errors will be ignored for this session
+1660048590041	RemoteAgent	INFO	Proxy settings initialised: {"proxyType":"manual","httpProxy":"127.0.0.1:54707","sslProxy":"127.0.0.1:54707"}
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new NotFoundError("Could not open the file at C:\\Users\\et\\AppData\\Local\\Temp\\rust_mozprofilemto0Xn\\search.json.mozlz4", (void 0)))
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+[GFX1]: Potential driver version mismatch ignored due to missing DLLs igd10umd64 v= and igd10iumd64 v=
+1660048625602	Marionette	INFO	Stopped listening on port 54720
+[GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt
