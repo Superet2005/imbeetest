@@ -1,5 +1,5 @@
 import time
-
+import requests
 from utility import *
 from page_object.question_page_elements import *
 
@@ -8,6 +8,13 @@ class QuestionListingPage:
     def __init__(self, object):
         self.driver = object  # pass driver into this class
         self.common = Common(driver=self.driver, maxWaitTime=10)
+
+    def checkApiAvailability(self, type, URL):
+
+        if type == "GET":
+            r = requests.get(URL)
+
+        assert r.status_code == 200
 
     def checkTagVisibility(self, tags):
         try:
@@ -72,7 +79,6 @@ class QuestionListingPage:
         except Exception as msg:
             print("Exception", msg)
             raise
-
 
     def checkScollingLazyLoad(self, scollingTimes, tags):
         try:
